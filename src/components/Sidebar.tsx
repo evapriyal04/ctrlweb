@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { FaChevronRight, FaChevronDown, FaUser, FaBuilding } from "react-icons/fa";
+import { usePathname, useRouter } from "next/navigation";
+import { FaChevronRight, FaChevronDown, FaUser, FaBuilding, FaCog, FaMoon, FaSun, FaSignOutAlt } from "react-icons/fa";
+import { useDarkMode } from "@/contexts/DarkModeContext";
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/dashboard" },
@@ -24,10 +25,28 @@ const sidebarLinks = [
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleDropdown = (label: string) => {
-    setOpenDropdown(openDropdown === label ? null : label);
+    if (label === "Settings") {
+      setShowSettings(!showSettings);
+      setOpenDropdown(null);
+    } else {
+      setOpenDropdown(openDropdown === label ? null : label);
+      setShowSettings(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear user data from localStorage
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    
+    // Redirect to login page
+    router.push('/');
   };
 
   return (
@@ -48,12 +67,14 @@ export default function Sidebar() {
           <span className="text-2xl font-bold">&gt;</span>
         )}
       </button>
+      
       {/* Sidebar Content */}
       <div className={isExpanded ? "" : "hidden"}>
         <div className="mb-8 pl-2 transition-all duration-300">
           <h2 className="text-2xl font-bold mb-2">CtrlWeb AMS</h2>
           <div className="text-sm">Apartment Management</div>
         </div>
+        
         <nav className="flex-1 flex flex-col gap-2">
           {sidebarLinks.map((link) => {
             const isActive =
@@ -151,7 +172,63 @@ export default function Sidebar() {
               </Link>
             );
           })}
+          
+          {/* Settings Section */}
+          <div className="mt-4 border-t border-white/20 pt-4">
+            <button
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition w-full
+                ${
+                  showSettings
+                    ? "bg-white text-[#e41c24]"
+                    : "bg-[#e41c24] text-white hover:bg-white hover:text-[#e41c24]"
+                }
+                justify-between
+              `}
+              style={{
+                fontWeight: showSettings ? "bold" : "normal",
+                boxShadow: showSettings ? "0 2px 8px #0001" : undefined,
+              }}
+              onClick={() => handleDropdown("Settings")}
+              type="button"
+            >
+              <span className="flex items-center gap-2">
+                <FaCog />
+                Settings
+              </span>
+              {showSettings ? (
+                <FaChevronDown className="ml-2" />
+              ) : (
+                <FaChevronRight className="ml-2" />
+              )}
+            </button>
+            
+            {/* Settings Dropdown */}
+            {showSettings && (
+              <div className="ml-4 mt-1 flex flex-col gap-1">
+                {/* Dark Mode Toggle - FIXED THE LABELS! */}
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold transition w-full bg-[#e41c24] text-white hover:bg-white hover:text-[#e41c24] justify-start"
+                  onClick={toggleDarkMode}
+                  type="button"
+                >
+                  {isDarkMode ? <FaSun /> : <FaMoon />}
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                
+                {/* Logout Button */}
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold transition w-full bg-[#e41c24] text-white hover:bg-white hover:text-[#e41c24] justify-start"
+                  onClick={handleLogout}
+                  type="button"
+                >
+                  <FaSignOutAlt />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
+        
         <div className="mt-8 text-xs text-[#fff8] pl-2 transition-all duration-300">
           © 2025 CtrlWeb
         </div>
