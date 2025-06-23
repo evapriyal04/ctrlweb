@@ -3,6 +3,37 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUserTie, FaUserCog, FaUserShield, FaUserFriends, FaUser, FaBook, FaUserAstronaut, FaLock, FaCheck, FaTimes, FaArrowLeft, FaPhone, FaEnvelope, FaKey } from "react-icons/fa";
 
+
+export const env = {
+  // Estate Manager Credentials
+  estateManager: {
+    email: process.env.NEXT_PUBLIC_ESTATE_MANAGER_EMAIL || 'estatemanager@example.com',
+    password: process.env.ESTATE_MANAGER_PASSWORD || 'defaultpassword',
+    pin: process.env.ESTATE_MANAGER_PIN || '0000',
+    phone: process.env.ESTATE_MANAGER_PHONE || '+91 00000 00000',
+  },
+  
+  // Security Questions
+  securityQuestions: {
+    "President": process.env.SECURITY_QUESTION_PRESIDENT || 'Default question?',
+    "Secretary": process.env.SECURITY_QUESTION_SECRETARY || 'Default question?',
+    "Joint Secretary": process.env.SECURITY_QUESTION_JOINT_SECRETARY || 'Default question?',
+    "Treasurer": process.env.SECURITY_QUESTION_TREASURER || 'Default question?',
+    "Joint Treasurer": process.env.SECURITY_QUESTION_JOINT_TREASURER || 'Default question?',
+    "Estate Manager": process.env.SECURITY_QUESTION_ESTATE_MANAGER || 'Default question?',
+  },
+  
+  // Security Answers
+  securityAnswers: {
+    "President": process.env.SECURITY_ANSWER_PRESIDENT || 'DEFAULT',
+    "Secretary": process.env.SECURITY_ANSWER_SECRETARY || 'DEFAULT',
+    "Joint Secretary": process.env.SECURITY_ANSWER_JOINT_SECRETARY || 'DEFAULT',
+    "Treasurer": process.env.SECURITY_ANSWER_TREASURER || 'DEFAULT',
+    "Joint Treasurer": process.env.SECURITY_ANSWER_JOINT_TREASURER || 'DEFAULT',
+    "Estate Manager": process.env.SECURITY_ANSWER_ESTATE_MANAGER || 'DEFAULT',
+  }
+};
+
 // Load existing credentials from localStorage or use defaults
 const getStoredCredentials = () => {
   if (typeof window !== 'undefined') {
@@ -12,36 +43,23 @@ const getStoredCredentials = () => {
     }
   }
   
-  // Default credentials (Estate Manager is permanent)
+  // Default credentials (Estate Manager is permanent) - now from env
   return {
     "Estate Manager": { 
-      email: "estatemanager@ctrlweb.com", 
-      password: "estatemanager123", 
-      pin: "2468",
-      phone: "+91 98765 43210",
+      email: env.estateManager.email, 
+      password: env.estateManager.password, 
+      pin: env.estateManager.pin,
+      phone: env.estateManager.phone,
       isRegistered: true 
     },
   };
 };
 
-// Security questions for each role
-const securityQuestions = {
-  "President": "What is the apartment complex name?",
-  "Secretary": "What year was the society established?",
-  "Joint Secretary": "How many blocks are in the complex?",
-  "Treasurer": "What is the monthly maintenance amount?",
-  "Joint Treasurer": "What is the society registration number?",
-  "Estate Manager": "What is the total number of apartments?",
-};
+// Security questions from environment variables
+const securityQuestions = env.securityQuestions;
 
-const securityAnswers = {
-  "President": "GREENVALLEY",
-  "Secretary": "2018",
-  "Joint Secretary": "4",
-  "Treasurer": "2500",
-  "Joint Treasurer": "SOC123",
-  "Estate Manager": "120",
-};
+// Security answers from environment variables
+const securityAnswers = env.securityAnswers;
 
 const loginOptions = [
   { label: "President", icon: <FaUserFriends size={32} className="text-[#22223b] dark:text-white" /> },
