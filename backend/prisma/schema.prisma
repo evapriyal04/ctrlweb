@@ -1,0 +1,227 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PROPERTY_MANAGER
+  LANDLORD
+  TENANT
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  CONDO
+  STUDIO
+  TOWNHOUSE
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  UNAVAILABLE
+}
+
+enum LeaseStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  PENDING
+}
+
+enum MaintenanceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+  FAILED
+}
+
+enum PaymentType {
+  RENT
+  DEPOSIT
+  UTILITIES
+  MAINTENANCE
+  LATE_FEE
+  OTHER
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  role        UserRole @default(TENANT)
+  avatar      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  managedProperties Property[] @relation("PropertyManager")
+  ownedProperties   Property[] @relation("PropertyOwner")
+  leases            Lease[]
+  maintenanceRequests MaintenanceRequest[]
+  payments          Payment[]
+  documents         Document[]
+
+  @@map("users")
+}
+
+model Property {
+  id          String         @id @default(cuid())
+  name        String
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  country     String         @default("US")
+  type        PropertyType
+  status      PropertyStatus @default(AVAILABLE)
+  bedrooms    Int
+  bathrooms   Decimal
+  sqft        Int?
+  rent        Decimal
+  deposit     Decimal
+  description String?
+  images      String[]
+  amenities   String[]
+  petPolicy   String?
+  smokingPolicy String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Foreign Keys
+  managerId   String?
+  ownerId     String
+
+  // Relationships
+  manager     User?   @relation("PropertyManager", fields: [managerId], references: [id])
+  owner       User    @relation("PropertyOwner", fields: [ownerId], references: [id])
+  leases      Lease[]
+  maintenanceRequests MaintenanceRequest[]
+  documents   Document[]
+
+  @@map("properties")
+}
+
+model Lease {
+  id          String      @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  monthlyRent Decimal
+  deposit     Decimal
+  status      LeaseStatus @default(PENDING)
+  terms       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Foreign Keys
+  propertyId  String
+  tenantId    String
+
+  // Relationships
+  property    Property @relation(fields: [propertyId], references: [id])
+  tenant      User     @relation(fields: [tenantId], references: [id])
+  payments    Payment[]
+  documents   Document[]
+
+  @@map("leases")
+}
+
+model MaintenanceRequest {
+  id          String            @id @default(cuid())
+  title       String
+  description String
+  priority    String            @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status      MaintenanceStatus @default(PENDING)
+  category    String // PLUMBING, ELECTRICAL, HVAC, APPLIANCE, OTHER
+  images      String[]
+  cost        Decimal?
+  notes       String?
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Foreign Keys
+  propertyId  String
+  tenantId    String
+  assignedTo  String?
+
+  // Relationships
+  property    Property @relation(fields: [propertyId], references: [id])
+  tenant      User     @relation(fields: [tenantId], references: [id])
+  assignee    User?    @relation(fields: [assignedTo], references: [id])
+
+  @@map("maintenance_requests")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  amount      Decimal
+  type        PaymentType
+  status      PaymentStatus @default(PENDING)
+  dueDate     DateTime
+  paidDate    DateTime?
+  method      String? // CASH, CHECK, CREDIT_CARD, BANK_TRANSFER, ONLINE
+  reference   String? // Transaction reference or check number
+  description String?
+  lateFee     Decimal       @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Foreign Keys
+  leaseId     String?
+  tenantId    String
+  propertyId  String?
+
+  // Relationships
+  lease       Lease?    @relation(fields: [leaseId], references: [id])
+  tenant      User      @relation(fields: [tenantId], references: [id])
+
+  @@map("payments")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  name        String
+  filename    String
+  mimetype    String
+  size        Int
+  url         String
+  category    String // LEASE, MAINTENANCE, PAYMENT, LEGAL, OTHER
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  uploadedBy  String
+  propertyId  String?
+  leaseId     String?
+
+  // Relationships
+  uploader    User      @relation(fields: [uploadedBy], references: [id])
+  property    Property? @relation(fields: [propertyId], references: [id])
+  lease       Lease?    @relation(fields: [leaseId], references: [id])
+
+  @@map("documents")
+}
